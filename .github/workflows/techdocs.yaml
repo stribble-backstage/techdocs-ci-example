@@ -1,0 +1,51 @@
+name: Publish TechDocs Site
+
+on:
+  push:
+    # branches: [main]
+    # # Run only when TechDocs related files are updated.
+    # paths:
+    #   - "docs/**"
+    #   - "mkdocs.yml"
+  workflow_dispatch:
+
+jobs:
+  publish-techdocs-site:
+    runs-on: ubuntu-latest
+
+    # The following secrets are required in your CI environment for publishing files to AWS S3.
+    # e.g. You can use GitHub Organization secrets to set them for all existing and new repositories.
+    env:
+      TECHDOCS_S3_BUCKET_NAME: ${{ secrets.TECHDOCS_S3_BUCKET_NAME }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ENTITY_NAMESPACE: 'default'
+      ENTITY_KIND: 'Component'
+      ENTITY_NAME: 'my-doc-entity'
+      # TODO: CONFIGURE WITH OIDC
+      
+      # In a Software template, Scaffolder will replace {{cookiecutter.component_id | jsonify}}
+      # with the correct entity name. This is same as metadata.name in the entity's catalog-info.yaml
+      # ENTITY_NAME: '{{ cookiecutter.component_id | jsonify }}'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
+        with:
+          python-version: '3.9'
+
+      - name: Install techdocs-cli
+        run: sudo npm install -g @techdocs/cli
+
+      - name: Install mkdocs and mkdocs plugins
+        run: python -m pip install mkdocs-techdocs-core==1.*
+
+      - name: Generate docs site
+        run: techdocs-cli generate --no-docker --verbose
+
+      - name: Publish docs site
+        run: techdocs-cli publish --publisher-type awsS3 --storage-name $TECHDOCS_S3_BUCKET_NAME --entity $ENTITY_NAMESPACE/$ENTITY_KIND/$ENTITY_NAME

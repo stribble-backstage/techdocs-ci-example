@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: techdocs-ci-example
+  description: This repo provides an example of pushing TechDocs to an AWS S3 bucket.
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+  
+  tags:
+    - tag
+    - updated1
+spec:
+  type: service
+  owner: stribble-backstage
+  lifecycle: experimental
+  system: user-management
